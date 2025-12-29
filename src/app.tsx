@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 
 export function App() {
   return (
@@ -8,5 +8,5 @@ export function App() {
         <Button className="bg-primary font-bold">DON'T CLICK ME</Button>
       </div>
     </>
-  );
+  )
 }
