@@ -1,12 +1,28 @@
-import { Button } from "@/components/ui/button"
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+
+import { MainLayout } from "@/layouts/main-layout"
+import { routes, type AppRoute } from "@/routes"
+import { NotFound } from "./pages/not-found"
 
 export function App() {
   return (
-    <>
-      <div className="flex min-h-svh flex-col items-center justify-center bg-cyan-950">
-        <h1 className="m-4 text-3xl font-bold text-white">Hello!</h1>
-        <Button className="bg-primary font-bold">DON'T CLICK ME</Button>
-      </div>
-    </>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<MainLayout />}>
+            {routes.map((route: AppRoute) => (
+              <Route
+                path={route.path}
+                element={route.element}
+                aria-label={route.label.toLowerCase()}
+              />
+            ))}
+            <Route
+              path="*"
+              element={<NotFound />}
+              aria-label="page not found"
+            />
+          </Route>
+        </Routes>
+      </BrowserRouter>
   )
 }
