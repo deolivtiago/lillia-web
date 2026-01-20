@@ -1,5 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router"
 
+import { ThemeProvider } from "@/components/theme-provider"
+
 import { Root } from "@/layouts/root"
 import { Home } from "@/pages/home"
 import { NotFound } from "@/pages/not-found"
@@ -16,5 +18,9 @@ const router = createBrowserRouter([
 ])
 
 export function App() {
-  return <RouterProvider router={router} />
+  return (
+    <ThemeProvider defaultTheme="system" storageKey="app-theme">
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  )
 }
