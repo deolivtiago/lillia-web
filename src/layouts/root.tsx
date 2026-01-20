@@ -9,7 +9,7 @@ import { CircleUserRound } from "lucide-react"
 export function Root() {
   return (
     <div className="bg-background flex h-screen w-screen flex-col items-center justify-between scroll-smooth">
-      <header className="bg-sidebar flex w-full items-center justify-center p-2 shadow">
+      <header className="bg-sidebar flex w-full items-center justify-center px-4 py-2 shadow">
         <div className="flex w-full max-w-480 items-center justify-between space-x-2">
           <nav className="flex w-full items-center justify-between space-x-4">
             <Logo />
