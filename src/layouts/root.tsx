@@ -1,5 +1,7 @@
 import { Link, Outlet } from "react-router"
 
+import { ThemeToggler } from "@/components/theme-toggler"
+
 import { AppRoutes } from "@/config/app-routes"
 
 export function Root() {
@@ -12,6 +14,7 @@ export function Root() {
               lillia
             </span>
           </Link>
+          <ThemeToggler />
         </nav>
       </header>
 
