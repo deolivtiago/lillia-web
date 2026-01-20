@@ -1,17 +1,13 @@
-import { Link, Outlet } from "react-router"
+import { Outlet } from "react-router"
 
-import { AppRoutes } from "@/config/app-routes"
+import { Logo } from "@/components/logo"
 
 export function Root() {
   return (
     <div className="bg-background flex h-screen w-screen flex-col items-center justify-between scroll-smooth">
       <header className="bg-sidebar flex w-full items-center justify-center shadow">
         <nav className="flex max-w-7xl items-center justify-center space-x-2 p-2">
-          <Link to={AppRoutes.Home.path}>
-            <span className="font-serif text-2xl font-semibold opacity-80 hover:opacity-100">
-              lillia
-            </span>
-          </Link>
+          <Logo />
         </nav>
       </header>
 
