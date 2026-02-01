@@ -1,5 +1,7 @@
 import { Outlet } from "react-router"
 
+import { Toaster } from "@/components/ui/sonner"
+
 import { Navbar } from "@/layouts/navbar"
 
 export function Root() {
@@ -8,6 +10,7 @@ export function Root() {
       <header className="bg-sidebar flex w-full items-center justify-center shadow">
         <Navbar />
       </header>
+      <Toaster position="top-right" />
 
       <main className="flex h-full w-full flex-col items-center justify-start">
         <Outlet />
