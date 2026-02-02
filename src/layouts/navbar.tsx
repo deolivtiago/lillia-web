@@ -1,5 +1,6 @@
 import { CircleUserRound } from "lucide-react"
 import { Link } from "react-router"
+import { toast } from "sonner"
 
 import { Logo } from "@/components/logo"
 import { ThemeToggler } from "@/components/theme-toggler"
@@ -9,8 +10,24 @@ import { AppRoutes } from "@/config/app-routes"
 
 export function Navbar() {
   return (
-    <nav className="flex w-full max-w-480 items-center justify-between space-x-4 px-4 py-2">
+    <nav className="3xl:max-w-480 flex w-full items-center justify-between space-x-4 p-2 md:max-w-3xl lg:max-w-5xl xl:max-w-7xl 2xl:max-w-400">
       <Logo />
+      <Button
+        variant="outline"
+        className="cursor-pointer"
+        onClick={() =>
+          toast("Event has been created", {
+            description:
+              "Sunday, December 03, 2023 at 9:00 AM Sunday, December 03, 2023 at 9:00 AM Sunday, December 03, 2023 at 9:00 AM",
+            action: {
+              label: "Undo",
+              onClick: () => console.log("Undo"),
+            },
+          })
+        }
+      >
+        Show Toast
+      </Button>
       <div className="flex items-center justify-center space-x-4">
         <ThemeToggler />
 
