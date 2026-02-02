@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router"
 
+import { AuthProvider } from "@/providers/auth-provider"
 import { ThemeProvider } from "@/providers/theme-provider"
 
 import { Root } from "@/layouts/root"
@@ -22,7 +23,9 @@ const router = createBrowserRouter([
 export function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey={AppStorage.Theme.key}>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </ThemeProvider>
   )
 }
