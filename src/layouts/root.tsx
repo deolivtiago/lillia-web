@@ -1,17 +1,12 @@
 import { Outlet } from "react-router"
 
-import { ThemeToggler } from "@/components/theme-toggler"
-
-import { Logo } from "@/components/logo"
+import { Navbar } from "@/layouts/navbar"
 
 export function Root() {
   return (
     <div className="bg-background flex h-screen w-screen flex-col items-center justify-between scroll-smooth">
       <header className="bg-sidebar flex w-full items-center justify-center shadow">
-        <nav className="container flex items-center justify-between gap-2 p-2">
-          <Logo />
-          <ThemeToggler />
-        </nav>
+        <Navbar />
       </header>
 
       <main className="flex h-full w-full flex-col items-center justify-start">
