@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTransition } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { Link, useNavigate } from "react-router"
 import { toast } from "sonner"
@@ -28,8 +29,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 
 import { AppRoutes } from "@/config/app-routes"
-import { isRight } from "fp-ts/lib/Either"
-import { useState } from "react"
+import { getUser } from "@/services/auth-service"
 
 const formSchema = z.object({
   email: z
@@ -45,49 +45,49 @@ const formSchema = z.object({
 type SignInFormSchema = z.infer<typeof formSchema>
 
 export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
+  const [isLoading, setLoading] = useTransition()
   const navigate = useNavigate()
-  const { doSignIn } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
+  const { listUsers } = useAuth()
 
   const form = useForm<SignInFormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: "deoliv.tiago@gmail.com",
+      password: "4m1Mad?",
     },
   })
 
   const onSubmit = async (data: SignInFormSchema) => {
-    setIsLoading(true)
-    console.log(data)
-    toast("You submitted the following values:", {
-      description: (
-        <pre className="bg-code text-code-foreground mt-2 w-[320px] overflow-x-auto rounded-md p-4">
-          <code>{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-      classNames: {
-        content: "flex flex-col gap-2",
-      },
-      style: {
-        "--border-radius": "calc(var(--radius)  + 4px)",
-      } as React.CSSProperties,
+    setLoading(async () => {
+      console.log(data)
+      toast("You submitted the following values:", {
+        description: (
+          <pre className="bg-code text-code-foreground mt-2 w-[320px] overflow-x-auto rounded-md p-4">
+            <code>{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        ),
+        classNames: {
+          content: "flex flex-col gap-2",
+        },
+        style: {
+          "--border-radius": "calc(var(--radius)  + 4px)",
+        } as React.CSSProperties,
+      })
+
+      listUsers().then(console.log).catch(console.error)
+      getUser(2).then(console.log).catch(console.error)
+      const body: { errors?: { email?: string[]; password?: string[] } } = {}
+      if ("errors" in body) {
+        form.setError("email", {
+          type: "submit",
+          message: body.errors?.email?.[0] || "",
+        })
+        form.setError("password", {
+          type: "submit",
+          message: body.errors?.password?.[0] || "",
+        })
+      } else navigate(AppRoutes.Home.path)
     })
-
-    const response = await doSignIn(data)
-    const body = isRight(response) ? response.right : response.left
-    if ("errors" in body) {
-      form.setError("email", {
-        type: "submit",
-        message: body.errors.email?.[0] || "",
-      })
-      form.setError("password", {
-        type: "submit",
-        message: body.errors.password?.[0] || "",
-      })
-    } else navigate(AppRoutes.Home.path)
-
-    setIsLoading(false)
   }
 
   return (
@@ -131,7 +131,6 @@ export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
                       autoComplete="email"
                       aria-invalid={fieldState.invalid}
                       disabled={isLoading}
-                      required
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -163,7 +162,6 @@ export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
                       autoComplete="off"
                       aria-invalid={fieldState.invalid}
                       disabled={isLoading}
-                      required
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -176,9 +174,9 @@ export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
                   className="cursor-pointer"
                   type="submit"
                   form="sign-in-form"
-                  // disabled={isLoading}
+                  disabled={isLoading}
                 >
-                  {isLoading ? "Signing in..." : "Sign In"}
+                  {isLoading ? "Wait..." : "Sign In"}
                 </Button>
 
                 <FieldDescription className="-mb-1 flex flex-col items-center justify-center pt-3">
@@ -190,16 +188,16 @@ export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
                       variant="link"
                       size="sm"
                       nativeButton={false}
-                      render={<Link to={AppRoutes.Terms.path} />}
+                      render={<Link to={AppRoutes.TermsOfUse.path} />}
                     >
-                      Terms of Service
+                      Terms of Use
                     </Button>
                     <span className="-mx-1.5">and</span>
                     <Button
                       variant="link"
                       size="sm"
                       nativeButton={false}
-                      render={<Link to={AppRoutes.Privacy.path} />}
+                      render={<Link to={AppRoutes.PrivacyPolicy.path} />}
                     >
                       Privacy Policy
                     </Button>

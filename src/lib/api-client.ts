@@ -1,129 +1,145 @@
-import { type Either, left, right } from "fp-ts/Either"
+import {
+  FetchHttpClient,
+  HttpBody,
+  HttpClient,
+  HttpClientRequest,
+  HttpClientResponse,
+} from "@effect/platform"
+import { Config, Console, Effect, Ref, Schedule, Schema } from "effect"
 
-import { APIRoutes } from "@/config/api-routes"
+const BASE_URL = "http://localhost:4000"
+const USER_ID = "734b4610-c156-43c0-bb46-ea6a01303aca"
 
-type RequestConfig = RequestInit & {
-  params?: Record<string, string | number | boolean>
-}
+const User = Schema.Struct({
+  id: Schema.Number,
+  name: Schema.String,
+  email: Schema.String,
+})
 
-export type HttpError = {
-  status: number
-  message: string
-  data?: unknown
-}
+export type User = Schema.Schema.Type<typeof User>
 
-const defaultHeaders = { "Content-Type": "application/json" }
+export class GetUserError extends Schema.TaggedError<GetUserError>()(
+  "GetUserError",
+  { id: Schema.Array(Schema.String) }
+) {}
 
-async function request<T>(
-  endpoint: string,
-  config: RequestConfig = {}
-): Promise<Either<HttpError, T>> {
-  const { params, headers, ...tail } = config
-  const url = buildUrl(endpoint, params)
-  const req = { ...tail, headers: { ...defaultHeaders, ...headers } }
+const getAllUsers = (http: HttpClient.HttpClient, url: string) => () =>
+  http.execute(HttpClientRequest.get(url)).pipe(
+    // HttpClient.retryTransient({ times: 5, schedule: Schedule.exponential(2000) }),
+    Effect.tap((it) => Console.log(`${it.request.method}: ${it.request.url}`)),
+    Effect.andThen(HttpClientResponse.schemaBodyJson(Schema.Array(User))),
+    Effect.tap(Console.log)
+    // Effect.catchTag("ParseError", Effect.tap(Console.log)),
+    // Effect.catchTags({
+    //   ParseError: (error) =>
+    //     Effect.succeed("failed parsing response: ".concat(error.message)),
+    //   ResponseError: (error) =>
+    //     Effect.succeed("failed making request: ".concat(error.message)),
+    //   RequestError: (error) =>
+    //     Effect.succeed("failed making request: ".concat(error.message)),
+    // })
+  )
 
-  return fetch(url, req)
-    .then(handleResponse<T>)
-    .catch((err) =>
-      left({
-        status: 0,
-        message: err instanceof err ? err.message : "network error",
-        data: err,
-      })
+const getUserById =
+  (http: HttpClient.HttpClient, url: string) => (id: number) =>
+    http.get(url.concat("/", id.toString())).pipe(
+      Effect.tap((it) =>
+        Console.log(`${it.request.method}: ${it.request.url}`)
+      ),
+      Effect.andThen(HttpClientResponse.schemaBodyJson(User)),
+      Effect.tap(Console.log)
     )
-}
 
-async function handleResponse<T>(
-  response: Response
-): Promise<Either<HttpError, T>> {
-  if (!response.ok) {
-    if (response.status === 422) return response.json().then(left)
+class MainAPIConfig extends Effect.Service<MainAPIConfig>()("MainAPIConfig", {
+  effect: Config.all({
+    baseUrl: Config.string("MAIN_API_BASE_URL").pipe(
+      Config.withDefault("https://jsonplaceholder.typicode.com/users")
+    ),
+  }),
+}) {}
 
-    return response.json().then((data) =>
-      left({
-        status: response.status,
-        message: response.statusText.toLowerCase(),
-        data: data,
-      })
-    )
+export class MainAPIClient extends Effect.Service<MainAPIClient>()(
+  "MainAPIClient",
+  {
+    effect: Effect.all({
+      http: HttpClient.HttpClient,
+      config: MainAPIConfig,
+    }).pipe(
+      Effect.map(({ http, config }) => ({
+        getAllUsers: getAllUsers(http, config.baseUrl),
+        getUserById: getUserById(http, config.baseUrl),
+      }))
+    ),
+    dependencies: [FetchHttpClient.layer, MainAPIConfig.Default],
   }
+) {}
 
-  return parseResponse<T>(response)
-    .then(right)
-    .catch((err) =>
-      left({
-        status: response.status,
-        message: "failed to parse response",
-        data: err,
+const toSchema =
+  <A, I, R>(schema: Schema.Schema<A, I, R>) =>
+  (response: HttpClientResponse.HttpClientResponse) =>
+    response.json.pipe(Effect.flatMap(Schema.decodeUnknown(schema)))
+
+const withBearerToken = (request: HttpClientRequest.HttpClientRequest) =>
+  request.pipe(HttpClientRequest.bearerToken("token"))
+
+const getUser = Effect.gen(function* () {
+  const httpClient = yield* HttpClient.HttpClient
+
+  return yield* httpClient
+    .get(`${BASE_URL}/users/${USER_ID}`)
+    .pipe(Effect.flatMap(toSchema(User)))
+})
+
+const createUser = Effect.gen(function* () {
+  const token = yield* Ref.make("")
+
+  const httpClient = (yield* HttpClient.HttpClient).pipe(
+    HttpClient.mapRequestEffect(
+      Effect.fn(function* (res) {
+        return res.pipe(
+          HttpClientRequest.bearerToken(yield* token.get),
+          HttpClientRequest.setHeader("Content-Type", "application/json")
+        )
       })
-    )
-}
-
-async function parseResponse<T>(response: Response): Promise<T> {
-  const contentType = response.headers.get("content-type")
-
-  if (contentType?.includes("application/json")) {
-    return response.json()
-  }
-
-  return response.text() as Promise<T>
-}
-
-function buildUrl(
-  endpoint: string,
-  params?: Record<string, string | number | boolean>
-): string {
-  const url = new URL(endpoint, APIRoutes.baseUrl())
-
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, String(value))
+    ),
+    HttpClient.mapRequestInput((res) => res),
+    HttpClient.retryTransient({
+      times: 3,
+      schedule: Schedule.exponential(2000),
     })
-  }
+  )
 
-  return url.toString()
-}
+  const withResponseSchema = <A, I, R>(
+    response: HttpClientResponse.HttpClientResponse,
+    schema: Schema.Schema<A, I, R>
+  ) => response.json.pipe(Effect.flatMap(Schema.decodeUnknown(schema)))
 
-export async function get<T>(
-  endpoint: string,
-  config?: Omit<RequestConfig, "method" | "body">
-): Promise<Either<HttpError, T>> {
-  return request<T>(endpoint, {
-    ...config,
-    method: "GET",
-  })
-}
+  const withRequestUrl = (
+    request: HttpClientRequest.HttpClientRequest,
+    url: string
+  ): HttpClientRequest.HttpClientRequest =>
+    request.pipe(HttpClientRequest.setUrl(url))
 
-export async function post<T>(
-  endpoint: string,
-  data?: unknown,
-  config?: Omit<RequestConfig, "method" | "body">
-): Promise<Either<HttpError, T>> {
-  return request<T>(endpoint, {
-    ...config,
-    method: "POST",
-    body: JSON.stringify(data),
-  })
-}
+  // const withRequestBody = (
+  //   request: HttpClientRequest.HttpClientRequest,
+  //   json: unknown
+  // ): HttpClientRequest.HttpClientRequest =>
+  //   request.pipe(
+  //     HttpBody.json(json).pipe(
+  //       Effect.flatMap((body) => HttpClientRequest.setBody(body))
+  //     )
+  //   )
 
-export async function put<T>(
-  endpoint: string,
-  data?: unknown,
-  config?: Omit<RequestConfig, "method" | "body">
-): Promise<Either<HttpError, T>> {
-  return request<T>(endpoint, {
-    ...config,
-    method: "PUT",
-    body: JSON.stringify(data),
-  })
-}
+  const request = HttpClientRequest.post(`${BASE_URL}/users`).pipe(
+    withBearerToken,
 
-export async function del<T>(
-  endpoint: string,
-  config?: Omit<RequestConfig, "method" | "body">
-): Promise<Either<HttpError, T>> {
-  return request<T>(endpoint, {
-    ...config,
-    method: "DELETE",
-  })
-}
+    HttpClientRequest.setBody(
+      yield* HttpBody.json({
+        fullName: "John Doe",
+        email: "john.doe@example.com",
+      })
+    )
+  )
+
+  return yield* httpClient.execute(request).pipe(Effect.flatMap(toSchema(User)))
+})

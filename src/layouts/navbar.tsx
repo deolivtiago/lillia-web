@@ -8,10 +8,20 @@ import { Button } from "@/components/ui/button"
 
 import { AppRoutes } from "@/config/app-routes"
 
-export function Navbar() {
+import { cn } from "@/lib/utils"
+
+export function Navbar({ className, children }: React.ComponentProps<"nav">) {
   return (
-    <nav className="container flex items-center justify-between gap-2 p-2">
+    <nav
+      className={cn(
+        "container flex w-full items-center justify-between gap-4 px-4 py-2",
+        className
+      )}
+    >
       <Logo />
+
+      {children}
+
       <div className="flex gap-4">
         <ThemeToggler />
 
