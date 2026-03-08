@@ -29,7 +29,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 
 import { AppRoutes } from "@/config/app-routes"
-import { getUser } from "@/services/auth-service"
+import { signIn } from "@/services/auth-service"
 
 const formSchema = z.object({
   email: z
@@ -52,7 +52,7 @@ export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
   const form = useForm<SignInFormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "deoliv.tiago@gmail.com",
+      email: "alice@wonderland.inc",
       password: "4m1Mad?",
     },
   })
@@ -74,8 +74,10 @@ export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
         } as React.CSSProperties,
       })
 
-      listUsers().then(console.log).catch(console.error)
-      getUser(2).then(console.log).catch(console.error)
+      // listUsers()
+      // getUser(2)
+      signIn(data.email, data.password)
+
       const body: { errors?: { email?: string[]; password?: string[] } } = {}
       if ("errors" in body) {
         form.setError("email", {
