@@ -1,3 +1,4 @@
+import { APIEndpoints, urlOf } from "@/config/api-config"
 import {
   FetchHttpClient,
   HttpBody,
@@ -5,7 +6,7 @@ import {
   HttpClientRequest,
   HttpClientResponse,
 } from "@effect/platform"
-import { Config, Console, Effect, Ref, Schedule, Schema } from "effect"
+import { Console, Effect, Ref, Schedule, Schema } from "effect"
 
 const BASE_URL = "http://localhost:4000"
 const USER_ID = "734b4610-c156-43c0-bb46-ea6a01303aca"
@@ -22,6 +23,24 @@ export class GetUserError extends Schema.TaggedError<GetUserError>()(
   "GetUserError",
   { id: Schema.Array(Schema.String) }
 ) {}
+
+const getUserInfo =
+  (http: HttpClient.HttpClient, url: string) => (id: number) =>
+    http
+      .execute(
+        HttpClientRequest.get(url).pipe(
+          HttpClientRequest.acceptJson,
+          HttpClientRequest.appendUrl(id.toString()),
+          HttpClientRequest.bearerToken(USER_ID)
+        )
+      )
+      .pipe(
+        Effect.tap((it) =>
+          Console.log(`${it.request.method}: ${it.request.url}`)
+        ),
+        Effect.andThen(HttpClientResponse.schemaBodyJson(User)),
+        Effect.tap(Console.log)
+      )
 
 const getAllUsers = (http: HttpClient.HttpClient, url: string) => () =>
   http.execute(HttpClientRequest.get(url)).pipe(
@@ -50,27 +69,43 @@ const getUserById =
       Effect.tap(Console.log)
     )
 
-class MainAPIConfig extends Effect.Service<MainAPIConfig>()("MainAPIConfig", {
-  effect: Config.all({
-    baseUrl: Config.string("MAIN_API_BASE_URL").pipe(
-      Config.withDefault("https://jsonplaceholder.typicode.com/users")
-    ),
-  }),
-}) {}
+const createUser = (http: HttpClient.HttpClient, url: string) => (user: User) =>
+  http.post(url).pipe(
+    Effect.tap((it) => Console.log(`${it.request.method}: ${it.request.url}`)),
+    Effect.andThen(HttpClientResponse.schemaBodyJson(User)),
+    Effect.tap(Console.log)
+  )
 
 export class MainAPIClient extends Effect.Service<MainAPIClient>()(
   "MainAPIClient",
   {
-    effect: Effect.all({
-      http: HttpClient.HttpClient,
-      config: MainAPIConfig,
-    }).pipe(
-      Effect.map(({ http, config }) => ({
-        getAllUsers: getAllUsers(http, config.baseUrl),
-        getUserById: getUserById(http, config.baseUrl),
+    effect: HttpClient.HttpClient.pipe(
+      Effect.map((http) => ({
+        signUp: signUp(http, urlOf(APIEndpoints.SignIn)),
+        signIn: signIn(http, urlOf(APIEndpoints.SignIn)),
+        signOut: signOut(http, urlOf(APIEndpoints.SignOut)),
+        sendCode: sendCode(http, urlOf(APIEndpoints.SendCode)),
+        confirmAccount: confirmAccount(
+          http,
+          urlOf(APIEndpoints.ConfirmAccount)
+        ),
+        resetPassword: resetPassword(http, urlOf(APIEndpoints.ResetPassword)),
+        changePassword: changePassword(
+          http,
+          urlOf(APIEndpoints.ChangePassword)
+        ),
+        changeEmail: changeEmail(http, urlOf(APIEndpoints.ChangeEmail)),
+        refreshToken: refreshToken(http, urlOf(APIEndpoints.RefreshToken)),
+        userInfo: getUserInfo(http, urlOf(APIEndpoints.UserInfo)),
+
+        getAllUsers: getAllUsers(http, urlOf(APIEndpoints.Users)),
+        getUserById: getUserById(http, urlOf(APIEndpoints.Users)),
+        createUser: createUser(http, urlOf(APIEndpoints.Users)),
+        updateUser: updateUser(http, urlOf(APIEndpoints.Users)),
+        deleteUser: deleteUser(http, urlOf(APIEndpoints.Users)),
       }))
     ),
-    dependencies: [FetchHttpClient.layer, MainAPIConfig.Default],
+    dependencies: [FetchHttpClient.layer],
   }
 ) {}
 
@@ -82,15 +117,7 @@ const toSchema =
 const withBearerToken = (request: HttpClientRequest.HttpClientRequest) =>
   request.pipe(HttpClientRequest.bearerToken("token"))
 
-const getUser = Effect.gen(function* () {
-  const httpClient = yield* HttpClient.HttpClient
-
-  return yield* httpClient
-    .get(`${BASE_URL}/users/${USER_ID}`)
-    .pipe(Effect.flatMap(toSchema(User)))
-})
-
-const createUser = Effect.gen(function* () {
+const createUserr = Effect.gen(function* () {
   const token = yield* Ref.make("")
 
   const httpClient = (yield* HttpClient.HttpClient).pipe(
