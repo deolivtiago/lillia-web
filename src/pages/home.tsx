@@ -1,11 +1,9 @@
-import { ChatList } from "@/pages/auth/chat"
-
 export function Home() {
   const onSubmit = async () => {}
 
   return (
     <div className="container flex h-full w-full flex-col items-center justify-center border p-2">
-      <ChatList />
+      {/*<ChatList />*/}
     </div>
     // <div className="container flex h-full items-center justify-center gap-2 p-2">
     // <Card className="flex h-full w-full max-w-2xl flex-col">

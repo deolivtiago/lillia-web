@@ -1,15 +1,10 @@
 import { Effect } from "effect"
 
+import { getUsers } from "@/lib/api"
 import { MainAPIClient } from "@/lib/api-client"
 
 export async function listUsers() {
-  return Effect.runPromise(
-    MainAPIClient.pipe(
-      Effect.andThen((http) => http.getAllUsers()),
-      Effect.andThen(({ data }) => Effect.succeed(data)),
-      Effect.provide(MainAPIClient.Default)
-    )
-  )
+  return Effect.runPromise(getUsers)
 }
 
 export async function getUser(id: string) {

@@ -4,10 +4,48 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/sonner"
 
+import { useAuth } from "@/hooks/use-auth"
 import { Footer } from "@/layouts/footer"
 import { Navbar } from "@/layouts/navbar"
 
 export function Root() {
+  const { listUsers } = useAuth()
+  const onClick = async () => {
+    listUsers()
+      .then((users) => {
+        toast("You submitted the following values:", {
+          description: (
+            <pre className="bg-code text-code-foreground mt-2 w-[320px] overflow-x-auto rounded-md p-4">
+              <code>{JSON.stringify(users, null, 2)}</code>
+            </pre>
+          ),
+          classNames: {
+            content: "flex flex-col gap-2",
+          },
+          style: {
+            "--border-radius": "calc(var(--radius)  + 4px)",
+          } as React.CSSProperties,
+        })
+        return users
+      })
+      .catch((error) => {
+        toast("Error fetching users", {
+          description: (
+            <pre className="bg-code text-code-foreground mt-2 w-[320px] overflow-x-auto rounded-md p-4">
+              <code>{JSON.stringify(error, null, 2)}</code>
+            </pre>
+          ),
+          classNames: {
+            content: "flex flex-col gap-2",
+          },
+          style: {
+            "--border-radius": "calc(var(--radius)  + 4px)",
+          } as React.CSSProperties,
+        })
+        return []
+      })
+  }
+
   return (
     <div className="bg-background flex min-h-dvh w-screen flex-col items-center justify-between scroll-smooth">
       <header className="bg-sidebar sticky top-0 z-10 flex max-h-16 w-full flex-row items-center justify-center gap-4 border-b px-4 shadow">
@@ -15,16 +53,7 @@ export function Root() {
           <Button
             variant="outline"
             className="cursor-pointer"
-            onClick={() =>
-              toast("Event has been created", {
-                description:
-                  "Sunday, December 03, 2023 at 9:00 AM Sunday, December 03, 2023 at 9:00 AM Sunday, December 03, 2023 at 9:00 AM",
-                action: {
-                  label: "Undo",
-                  onClick: () => console.log("Undo"),
-                },
-              })
-            }
+            onClick={onClick}
           >
             toasty!
           </Button>
