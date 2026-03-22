@@ -2,24 +2,51 @@ import { Schema } from "effect"
 
 import { RegExpUtils } from "@/lib/utils"
 
+const NonBlankString = Schema.NonEmptyTrimmedString.annotations({
+  message: () => "can't be blank",
+})
+
+const ValidEmail = NonBlankString.pipe(
+  Schema.minLength(3, { message: () => "must be at least 3 character(s)" }),
+  Schema.maxLength(128, { message: () => "must be at most 128 character(s)" }),
+  Schema.pattern(RegExpUtils.email, { message: () => "has invalid format" })
+)
+
+const ValidPassword = NonBlankString.pipe(
+  Schema.minLength(6, { message: () => "should be at least 6 character(s)" }),
+  Schema.maxLength(72, { message: () => "should be at most 72 character(s)" }),
+  Schema.pattern(RegExpUtils.password, {
+    message: () => "must have number(s), uppercase, lowercase, and special character(s)",
+  })
+)
+
+const ValidFullName = NonBlankString.pipe(
+  Schema.minLength(3, { message: () => "should be at least 3 character(s)" }),
+  Schema.maxLength(255, { message: () => "should be at most 255 character(s)" })
+)
+
+const ValidRoleId = NonBlankString.pipe(
+  Schema.pattern(RegExpUtils.role, { message: () => "has invalid format" })
+)
+
+const ValidPermission = NonBlankString.pipe(
+  Schema.pattern(RegExpUtils.permission, { message: () => "has invalid format" })
+)
+
+const ValidVerificationCode = NonBlankString.pipe(
+  Schema.length(6, { message: () => "should be 6 character(s)" })
+)
+
 export const AuthSignUpInput = Schema.Struct({
   id: Schema.optional(Schema.UUID),
-  fullName: Schema.NonEmptyTrimmedString.pipe(Schema.length({ min: 3, max: 255 })),
-  email: Schema.NonEmptyTrimmedString.pipe(
-    Schema.length({ min: 3, max: 128 })
-    // Schema.pattern(RegExpUtils.email)
-  ),
-  password: Schema.Redacted(
-    Schema.NonEmptyTrimmedString.pipe(
-      Schema.length({ min: 6, max: 72 })
-      // Schema.pattern(RegExpUtils.password)
-    )
-  ),
+  fullName: ValidFullName,
+  email: ValidEmail,
+  password: ValidPassword,
 })
 
 export const AuthSignInInput = Schema.Struct({
-  email: Schema.NonEmptyTrimmedString.pipe(Schema.pattern(RegExpUtils.email)),
-  password: Schema.Redacted(Schema.NonEmptyTrimmedString),
+  email: ValidEmail,
+  password: ValidPassword,
 })
 
 export const AuthSignOutInput = Schema.Struct({
@@ -32,64 +59,43 @@ export const AuthRefreshTokenInput = Schema.Struct({
 })
 
 export const UserConfirmAccountInput = Schema.Struct({
-  email: Schema.NonEmptyTrimmedString.pipe(Schema.pattern(RegExpUtils.email)),
-  code: Schema.NonEmptyTrimmedString.pipe(Schema.length(6)),
+  email: ValidEmail,
+  code: ValidVerificationCode,
 })
 
 export const AuthResetPasswordInput = Schema.Union(
   UserConfirmAccountInput,
-  Schema.Struct({
-    newPassword: Schema.Redacted(
-      Schema.NonEmptyTrimmedString.pipe(
-        Schema.length({ min: 6, max: 72 }),
-        Schema.pattern(RegExpUtils.password)
-      )
-    ),
-  })
+  Schema.Struct({ newPassword: ValidPassword })
 )
 
 export const AuthChangeEmailInput = Schema.Struct({
-  email: Schema.NonEmptyTrimmedString.pipe(Schema.pattern(RegExpUtils.email)),
-  password: Schema.Redacted(Schema.NonEmptyTrimmedString),
-  newEmail: Schema.NonEmptyTrimmedString.pipe(
-    Schema.length({ min: 3, max: 128 }),
-    Schema.pattern(RegExpUtils.email)
-  ),
+  email: ValidEmail,
+  password: NonBlankString,
+  newEmail: ValidEmail,
 })
 
 export const AuthChangePasswordInput = Schema.Struct({
-  email: Schema.NonEmptyTrimmedString.pipe(Schema.pattern(RegExpUtils.email)),
-  password: Schema.Redacted(Schema.NonEmptyTrimmedString),
-  newPassword: Schema.Redacted(
-    Schema.NonEmptyTrimmedString.pipe(
-      Schema.length({ min: 6, max: 72 }),
-      Schema.pattern(RegExpUtils.password)
-    )
-  ),
+  email: ValidEmail,
+  password: NonBlankString,
+  newPassword: ValidPassword,
 })
 
 export const UserCreateInput = Schema.Struct({
-  fullName: Schema.NonEmptyTrimmedString.pipe(Schema.length({ min: 3, max: 255 })),
+  fullName: ValidFullName,
   isVerified: Schema.optional(Schema.Boolean),
-  roleId: Schema.optional(Schema.NonEmptyTrimmedString),
-  email: Schema.NonEmptyTrimmedString.pipe(
-    Schema.length({ min: 3, max: 128 }),
-    Schema.pattern(RegExpUtils.email)
-  ),
-  password: Schema.Redacted(
-    Schema.NonEmptyTrimmedString.pipe(
-      Schema.length({ min: 6, max: 72 }),
-      Schema.pattern(RegExpUtils.password)
-    )
-  ),
+  roleId: Schema.optional(ValidRoleId),
+  email: ValidEmail,
+  password: ValidPassword,
 })
 
 export const UserUpdateInput = Schema.Struct({
-  fullName: Schema.NonEmptyTrimmedString.pipe(Schema.length({ min: 3, max: 255 })),
+  fullName: ValidFullName,
   isVerified: Schema.optional(Schema.Boolean),
-  roleId: Schema.optional(Schema.NonEmptyTrimmedString),
-  email: Schema.NonEmptyTrimmedString.pipe(
-    Schema.length({ min: 3, max: 128 }),
-    Schema.pattern(RegExpUtils.email)
-  ),
+  roleId: Schema.optional(ValidRoleId),
+  email: ValidEmail,
+})
+
+export const RoleCreateInput = Schema.Struct({
+  id: ValidRoleId,
+  permissions: Schema.Array(ValidPermission),
 })

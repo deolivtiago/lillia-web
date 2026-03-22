@@ -8,5 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export type RegExpUtils = (typeof RegExpUtils)[keyof typeof RegExpUtils]
 export const RegExpUtils = {
   email: /^(?!\.)(?!.*\.\.)([A-Z0-9_+-.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9-]*\.)+[A-Z]{2,}$/i,
-  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])$/,
+  password: /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])/,
+  permission: /^(GET|POST|PUT|DELETE):([a-z0-9][-/]?)+$/,
+  role: /^[a-zA-Z0-9_]+$/,
 } as const

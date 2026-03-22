@@ -48,36 +48,35 @@ export const handleResponseOf = <A>(
   >
 ) =>
   Effect.catchTags(response, {
-    Unauthorized: (_error) =>
+    Unauthorized: () =>
       Effect.fail(
         MainAPIError.make({
           message: "Error: unauthorized resource",
           description: "You do not have authorization to access this resource.",
         })
       ),
-    Forbidden: (_error) =>
+    Forbidden: () =>
       Effect.fail(
         MainAPIError.make({
           message: "Error: forbidden resource",
           description: "You do not have permission to access this resource.",
         })
       ),
-    ServiceUnavailable: (_error) =>
+    ServiceUnavailable: () =>
       Effect.fail(
         MainAPIError.make({
           message: "Error: service unavailable",
           description: "Our services are currently unavailable. Please try again later.",
         })
       ),
-    BadRequest: (_error) => Effect.fail(MainAPIError.make({ message: "Error: bad request" })),
-    NotFound: (_error) => Effect.fail(MainAPIError.make({ message: "Error: invalid resource" })),
-    InternalServerError: (_error) =>
+    BadRequest: () => Effect.fail(MainAPIError.make({ message: "Error: bad request" })),
+    NotFound: () => Effect.fail(MainAPIError.make({ message: "Error: invalid resource" })),
+    InternalServerError: () =>
       Effect.fail(MainAPIError.make({ message: "Error: unexpected error" })),
-    RequestError: (_error) => Effect.fail(MainAPIError.make({ message: "Error: invalid request" })),
-    ResponseError: (_error) =>
-      Effect.fail(MainAPIError.make({ message: "Error: invalid response" })),
-    ParseError: (_error) => Effect.fail(MainAPIError.make({ message: "Error: parsing failure" })),
-    HttpApiDecodeError: (_error) =>
+    RequestError: () => Effect.fail(MainAPIError.make({ message: "Error: invalid request" })),
+    ResponseError: () => Effect.fail(MainAPIError.make({ message: "Error: invalid response" })),
+    ParseError: () => Effect.fail(MainAPIError.make({ message: "Error: parsing failure" })),
+    HttpApiDecodeError: () =>
       Effect.fail(MainAPIError.make({ message: "Error: decoding failure" })),
     UnprocessableContent: ({ errors }: UnprocessableContent) =>
       Effect.fail(
